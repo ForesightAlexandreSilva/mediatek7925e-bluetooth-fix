@@ -1,5 +1,3 @@
-### ⚠️ Currently not working on Fedora 43 (see https://github.com/LuanAdemi/mediatek7925e-bluetooth-fix/issues/1)
-
 # MediaTek WiFi/Bluetooth Combo Card Fix
 
 A fix for MediaTek WiFi/Bluetooth combo cards that are incorrectly identified as media devices, causing GVFS/GIO to interfere with Bluetooth functionality. This README is intended to give a comprehensive explanation of the issue and the script. If you need more information feel free to open an issue.
@@ -42,32 +40,6 @@ This fix is specifically for:
 - **Chip:** MediaTek WiFi/Bluetooth combo card
 - **Common in:** Various laptop models with integrated wireless cards
 
-### How to Check If You're Affected
-
-Run this command to see if your device is misidentified:
-
-```bash
-lsusb -d 0489:e111 -v 2>/dev/null | grep -E "idVendor|idProduct"
-```
-
-Then check udev properties:
-
-```bash
-udevadm info --query=all --name=/dev/bus/usb/*/$(lsusb | grep 0489:e111 | awk '{print $4}' | sed 's/://') 2>/dev/null | grep -E "GPHOTO2|MTP|MEDIA_PLAYER"
-```
-
-If you see properties like `ID_GPHOTO2=1`, `ID_MTP_DEVICE=1`, or `ID_MEDIA_PLAYER=1`, you're affected by this issue.
-
-## The Solution
-
-This script creates a **udev rule** that prevents the misidentification by:
-
-1. **Removing false device properties** (GPHOTO2, MTP, MEDIA_PLAYER flags)
-2. **Instructing GVFS to ignore the device** using `GVFS_IGNORE` environment variable
-3. **Telling UDISKS to skip the device** using `UDISKS_IGNORE` environment variable
-4. **Preventing automatic mounting** while allowing proper drivers to function
-
-The fix works at the udev level, which processes device events before GVFS can claim the device.
 
 ## Installation
 
@@ -75,105 +47,30 @@ The fix works at the udev level, which processes device events before GVFS can c
 
 ```bash
 # Download the script
-wget https://raw.githubusercontent.com/LuanAdemi/mediatek7925e-bluetooth-fix/refs/heads/main/foxcon_fix.sh
+wget https://raw.githubusercontent.com/LuanAdemi/mediatek7925e-bluetooth-fix/refs/heads/main/mediatek_fix.sh
 
 # Make it executable
-chmod +x foxcon_fix.sh
+chmod +x mediatek_fix.sh
 
 # Run it with sudo
-sudo ./foxcon_fix.sh
+sudo ./mediatek_fix.sh --apply
 ```
+
+Restart your PC (in some cases a full power cycle is needed)
 
 ### Manual Installation
 
-If you prefer to manually create the udev rule:
-
-1. Create the file `/etc/udev/rules.d/99-mediatek-wifi-bluetooth.rules`:
-
-```bash
-sudo nano /etc/udev/rules.d/99-mediatek-wifi-bluetooth.rules
-```
-
-2. Add this content:
-
-```
-# MediaTek WiFi/Bluetooth combo card - prevent misidentification
-ACTION=="add", SUBSYSTEM=="usb", ATTRS{idVendor}=="0489", ATTRS{idProduct}=="e111", \
-    ENV{UDISKS_IGNORE}="1", \
-    ENV{GVFS_IGNORE}="1", \
-    ENV{ID_GPHOTO2}="", \
-    ENV{GPHOTO2_DRIVER}="", \
-    ENV{ID_MEDIA_PLAYER}="", \
-    ENV{ID_MTP_DEVICE}="", \
-    ENV{COLORD_DEVICE}="", \
-    ENV{COLORD_KIND}=""
-```
-
-3. Reload udev rules:
-
-```bash
-sudo udevadm control --reload-rules
-sudo udevadm trigger --action=add --subsystem-match=usb --attr-match=idVendor=0489 --attr-match=idProduct=e111
-```
-
-4. Unplug and replug the device (or reboot)
-
-## Verification
-
-After applying the fix, verify it's working:
-
-```bash
-udevadm info /dev/bus/usb/*/$(lsusb | grep 0489:e111 | awk '{print $4}' | sed 's/://') 2>/dev/null | grep -E 'ID_GPHOTO2|ID_MTP|ID_MEDIA'
-```
-
-This should return **empty output** if the fix is working correctly.
-
-Check that Bluetooth is functioning:
-
-```bash
-systemctl status bluetooth
-bluetoothctl show
-```
+See [here](https://github.com/LuanAdemi/mediatek7925e-bluetooth-fix/issues/1#issuecomment-3516650391)
 
 ## Uninstallation
 
 To remove the fix:
 
 ```bash
-sudo rm /etc/udev/rules.d/99-mediatek-wifi-bluetooth.rules
-sudo udevadm control --reload-rules
+sudo ./mediatek_fix.sh --undo
 ```
 
 Then unplug/replug the device or reboot.
-
-## Troubleshooting
-
-### Bluetooth still not working after fix
-
-1. Restart the Bluetooth service:
-```bash
-sudo systemctl restart bluetooth
-```
-
-2. Check for other conflicting services:
-```bash
-systemctl status bluetooth
-dmesg | grep -i bluetooth
-```
-
-3. Verify the udev rule is loaded:
-```bash
-udevadm test /sys/bus/usb/devices/*/3-5 2>&1 | grep -i "99-mediatek"
-```
-
-### Device not detected
-
-If `lsusb` doesn't show your device:
-
-1. Check physical connection
-2. Try different USB ports
-3. Check kernel messages: `dmesg | tail -50`
-4. Verify USB controller is working: `lsusb` (should show other devices)
 
 ## System Requirements
 
@@ -182,7 +79,10 @@ If `lsusb` doesn't show your device:
 
 **Tested on:**
 - Ubuntu 25.04
-- Fedora 42
+- Fedora 43
+
+## Credits
+Huge thanks to @bchardon for finding a [fix](https://github.com/LuanAdemi/mediatek7925e-bluetooth-fix/issues/1#issuecomment-3516650391) working on the new Fedora update.
 
 ## License
 
