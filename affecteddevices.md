@@ -1,5 +1,5 @@
 # Affected devices
-The following list includes all affected devices reported by the community. If you found this page, are affected and don't see your device in this list, please open an issue!
+The following list includes all affected devices reported by the community. If you found this page, are affected and don't see your device in this list, please open a pull request!
 
 ## Lenovo
 * IdeaPad Pro 5 14AKP10
