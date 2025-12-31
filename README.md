@@ -1,3 +1,5 @@
+> A fix has been introduced upstream in libmtp (see [here](https://github.com/libmtp/libmtp/issues/346)).
+
 # MediaTek WiFi/Bluetooth Combo Card Fix
 
 A fix for MediaTek WiFi/Bluetooth combo cards that are incorrectly identified as media devices, causing GVFS/GIO to interfere with Bluetooth functionality. This README is intended to give a comprehensive explanation of the issue and the script. If you need more information feel free to open an issue.
